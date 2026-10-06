@@ -1,33 +1,45 @@
 # Multimedia Analyzer
 
-A comprehensive Python-based tool for analyzing and extracting detailed information from multimedia files including images, audio, and videos.
+A comprehensive Python-based multimedia analysis and enhancement toolkit for images, audio, and video files. This project includes metadata extraction, image enhancement, and voice cloning using ElevenLabs' API.
 
 ## Features
 
 ### Image Analysis
-- **File Information**: Extracts filename, file size, and format
-- **Image Properties**: Captures width, height, resolution (DPI), and color mode
-- **EXIF Metadata**: Extracts camera details (make, model), capture date, orientation, and software information
+- File information: filename, size, and format
+- Image properties: width, height, resolution (DPI), and color mode
+- EXIF metadata extraction: camera make/model, capture date, orientation, and software info
+
+### Image Enhancement
+- Brightness adjustment
+- Contrast enhancement
+- Color adjustment
+- Sharpening
+- Median-filter based denoising
 
 ### Audio Analysis
-- **File Information**: Filename and file size
-- **Audio Properties**: Number of channels, sampling rate, and bit rate
-- **Duration**: Total playback length in seconds
-- **Metadata**: Extracts ID3 tags and other audio metadata
+- File information: filename and size
+- Audio properties: channels, sample rate, and bitrate
+- Duration calculation
+- Metadata extraction using ID3 and other supported tags
+
+### Voice Cloning
+- Reference voice sample upload for consent-based voice cloning
+- Generation of a unique voice ID from ElevenLabs
+- Text-to-speech generation using the generated voice ID
 
 ### Video Analysis
-- **File Information**: Filename and file size
-- **Container Information**: Video format and total duration
-- **Video Stream Details**: Resolution, frame rate, bit rate, and codec
-- **Audio Stream Details**: Codec, channels, sampling rate, and bit rate
-- **Metadata**: Extracts container-level metadata tags
+- File information: filename and size
+- Container metadata: format and duration
+- Video stream analysis: resolution, frame rate, bitrate, and codec
+- Audio stream analysis: codec, channels, sample rate, and bitrate
 
 ## Requirements
 
 - Python 3.10+
-- `Pillow` - Image processing
-- `mutagen` - Audio metadata extraction
-- `ffmpeg` and `ffprobe` - Video processing
+- Pillow
+- mutagen
+- ffmpeg and ffprobe
+- elevenlabs
 
 ## Installation
 
@@ -37,27 +49,30 @@ git clone https://github.com/mradulnatani/IC-2K22-56_Multimedia_Analyzer.git
 cd IC-2K22-56_Multimedia_Analyzer
 ```
 
-2. Install Python dependencies:
+2. Install the required Python dependencies:
 ```bash
-pip install Pillow mutagen
+pip install Pillow mutagen elevenlabs
 ```
 
-3. Install FFmpeg (required for video analysis):
-
-**On Ubuntu/Debian:**
+3. Install FFmpeg:
+- Ubuntu/Debian:
 ```bash
 sudo apt-get install ffmpeg
 ```
 
-**On macOS (with Homebrew):**
+- macOS (Homebrew):
 ```bash
 brew install ffmpeg
 ```
 
-**On Windows:**
-Download from [ffmpeg.org](https://ffmpeg.org/download.html) or use:
+- Windows:
 ```bash
 choco install ffmpeg
+```
+
+4. Set your ElevenLabs API key:
+```bash
+export ELEVENLABS_API_KEY="your-api-key-here"
 ```
 
 ## Usage
@@ -74,8 +89,14 @@ python main.py <path_to_media_file>
 # Analyze an image
 python main.py samples/photo.jpg
 
+# Enhance an image
+python main.py --enhance samples/photo.jpg
+
 # Analyze an audio file
 python main.py samples/song.mp3
+
+# Clone a voice and generate speech
+python main.py --voice-clone samples/reference_voice.mp3 --text "Hello, this is my cloned voice"
 
 # Analyze a video
 python main.py samples/video.mp4
@@ -83,64 +104,81 @@ python main.py samples/video.mp4
 
 ## Output
 
-Analysis reports are generated as text files in the `reports/` directory. Each report contains:
+Analysis reports are generated in the `reports/` directory. Each report may include:
 - File type identification
-- Detailed metadata and properties specific to the file type
-- Any errors encountered during analysis
+- Detailed metadata and properties
+- Enhancement results
+- Voice cloning status and generated voice ID
+- Errors encountered during processing
 
 ## Project Structure
 
-```
+```text
 IC-2K22-56_Multimedia_Analyzer/
 ├── main.py                 # Main entry point
 ├── image_analyzer.py       # Image analysis module
+├── image_enhancer.py       # Image enhancement module
 ├── audio_analyzer.py       # Audio analysis module
 ├── video_analyzer.py       # Video analysis module
-├── file_utils.py           # File utilities (existence check, type detection)
+├── voice_cloner.py         # Voice cloning module using ElevenLabs API
+├── file_utils.py           # File utilities and type detection
 ├── report_generator.py     # Report generation module
-├── reports/                # Output directory for analysis reports
-└── samples/                # Sample multimedia files for testing
+├── reports/                # Generated analysis reports
+├── samples/                # Sample multimedia files
+├── README.md               # Project documentation
+└── requirements.txt        # Dependency list
 ```
 
 ## Supported File Formats
 
 ### Images
-- JPEG, PNG, GIF, BMP, TIFF, WebP, and other PIL-supported formats
+- JPEG, PNG, GIF, BMP, TIFF, WebP, and other formats supported by Pillow
 
 ### Audio
-- MP3, FLAC, OGG, WAV, M4A, and other Mutagen-supported formats
+- MP3, FLAC, OGG, WAV, M4A, and other formats supported by Mutagen
 
 ### Video
-- MP4, MKV, AVI, MOV, WebM, and other FFmpeg-supported formats
+- MP4, MKV, AVI, MOV, WebM, and other formats supported by FFmpeg
 
 ## Technical Details
 
 ### Image Analyzer
-- Uses `PIL (Pillow)` for image processing
-- Extracts EXIF data using PIL's ExifTags module
-- Provides comprehensive metadata about image properties
+- Built using Pillow
+- EXIF data extraction via PIL's ExifTags support
+- Captures core image metadata and dimensions
+
+### Image Enhancer
+- Implements classical image-processing operations
+- Supports brightness, contrast, color tuning, sharpening, and denoising
+- Uses median filtering for noise reduction
 
 ### Audio Analyzer
-- Uses `Mutagen` library for universal audio metadata support
-- Handles multiple audio formats with automatic format detection
-- Extracts technical information and ID3/Vorbis tags
+- Uses Mutagen for metadata extraction
+- Detects audio format automatically
+- Retrieves bitrate, duration, and ID3-related metadata
+
+### Voice Cloner
+- Integrates ElevenLabs voice-cloning API
+- Sends a consented reference voice sample
+- Generates a voice ID
+- Uses that voice ID for text-to-speech synthesis
 
 ### Video Analyzer
-- Uses `FFprobe` (part of FFmpeg) to extract detailed metadata
-- Analyzes both video and audio streams independently
-- Provides container and codec information
+- Uses FFprobe to extract metadata
+- Analyzes both video and audio streams separately
 
 ## Error Handling
 
-The tool gracefully handles:
+The tool is designed to handle:
 - Missing or inaccessible files
-- Unsupported file formats
-- Files with missing or corrupted metadata
-- Missing external dependencies (FFmpeg/FFprobe)
+- Unsupported file types
+- Corrupted or incomplete metadata
+- Missing external dependencies
+- API connectivity or rate-limit issues during voice cloning
 
 ## Author
 
-Created for IC-2K22-56 project
+Created for the IC-2K22-56 Multimedia project.
 
 ## License
 
@@ -148,4 +186,4 @@ Created for IC-2K22-56 project
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit pull requests or open issues for any bugs or feature requests.
+Contributions are welcome. Feel free to open issues or submit pull requests with improvements, bug fixes, or new features.
