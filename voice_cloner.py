@@ -1,125 +1,113 @@
+import argparse
 import os
-from io import BytesIO
-
-from dotenv import load_dotenv
-from elevenlabs.client import ElevenLabs
-
-
-load_dotenv()
-
-
-def get_client():
-    api_key = os.getenv("ELEVENLABS_API_KEY")
-
-    if not api_key:
-        raise RuntimeError(
-            "ELEVENLABS_API_KEY is not configured. "
-            "Add it to your .env file."
-        )
-
-    return ElevenLabs(api_key=api_key)
-
-
-def clone_voice(
-    audio_path,
-    voice_name="Multimedia Analyzer Voice"
-):
-    """
-    Create an Instant Voice Clone using an audio sample.
-
-    The audio should belong to the person whose voice is being cloned
-    or be used with that person's permission.
-
-    Returns:
-        voice_id
-    """
-
-    if not os.path.exists(audio_path):
-        raise FileNotFoundError(
-            f"Voice sample not found: {audio_path}"
-        )
-
-    client = get_client()
-
-    with open(audio_path, "rb") as audio_file:
-        audio_data = audio_file.read()
-
-    voice = client.voices.ivc.create(
-        name=voice_name,
-        files=[
-            BytesIO(audio_data)
-        ]
-    )
-
-    return voice.voice_id
+import subprocess
 
 
 def generate_speech(
-    text,
-    voice_id,
-    output_path="outputs/cloned_voice.mp3",
-    model_id="eleven_multilingual_v2"
+    ref_audio,
+    ref_text,
+    gen_text,
+    model="F5TTS_v1_Base",
 ):
     """
-    Generate speech using the cloned voice.
+    Generate speech using F5-TTS voice cloning.
+
+    Args:
+        ref_audio: Reference voice recording.
+        ref_text: Exact transcription of reference recording.
+        gen_text: Text that the cloned voice should speak.
+        model: F5-TTS model name.
     """
 
-    if not text.strip():
-        raise ValueError("Text cannot be empty.")
+    if not os.path.isfile(ref_audio):
+        raise FileNotFoundError(
+            f"Reference audio not found: {ref_audio}"
+        )
 
-    client = get_client()
+    if not ref_text.strip():
+        raise ValueError(
+            "Reference text cannot be empty."
+        )
 
-    audio = client.text_to_speech.convert(
-        text=text,
-        voice_id=voice_id,
-        model_id=model_id,
-        output_format="mp3_44100_128"
+    if not gen_text.strip():
+        raise ValueError(
+            "Generated text cannot be empty."
+        )
+
+    command = [
+        "f5-tts_infer-cli",
+        "--model",
+        model,
+        "--ref_audio",
+        ref_audio,
+        "--ref_text",
+        ref_text,
+        "--gen_text",
+        gen_text,
+    ]
+
+    print("=" * 60)
+    print("        F5-TTS VOICE CLONING")
+    print("=" * 60)
+
+    print(f"\nReference audio : {ref_audio}")
+    print(f"Reference text  : {ref_text}")
+    print(f"Generated text  : {gen_text}")
+    print("\nStarting F5-TTS...\n")
+
+    try:
+        subprocess.run(
+            command,
+            check=True,
+        )
+
+    except subprocess.CalledProcessError as error:
+        raise RuntimeError(
+            f"F5-TTS inference failed with exit code "
+            f"{error.returncode}"
+        )
+
+    print("\n" + "=" * 60)
+    print("F5-TTS GENERATION COMPLETED")
+    print("=" * 60)
+
+
+def main():
+
+    parser = argparse.ArgumentParser(
+        description="F5-TTS Voice Cloning"
     )
 
-    os.makedirs(
-        os.path.dirname(output_path) or ".",
-        exist_ok=True
+    parser.add_argument(
+        "audio",
+        help="Reference audio file"
     )
 
-    with open(output_path, "wb") as output_file:
-        for chunk in audio:
-            output_file.write(chunk)
-
-    return output_path
-
-
-def clone_and_generate(
-    audio_path,
-    text,
-    voice_name="Multimedia Analyzer Voice",
-    output_path="outputs/cloned_voice.mp3"
-):
-    """
-    Complete pipeline:
-
-    reference audio
-        ↓
-    voice cloning
-        ↓
-    cloned voice ID
-        ↓
-    text-to-speech
-        ↓
-    MP3
-    """
-
-    voice_id = clone_voice(
-        audio_path=audio_path,
-        voice_name=voice_name
+    parser.add_argument(
+        "ref_text",
+        help="Transcript of the reference audio"
     )
 
-    generated_audio = generate_speech(
-        text=text,
-        voice_id=voice_id,
-        output_path=output_path
+    parser.add_argument(
+        "gen_text",
+        help="Text to generate using the reference voice"
     )
 
-    return {
-        "voice_id": voice_id,
-        "output_file": generated_audio
-    }
+    parser.add_argument(
+        "--model",
+        default="F5TTS_v1_Base",
+        help="F5-TTS model"
+    )
+
+    args = parser.parse_args()
+
+    generate_speech(
+        ref_audio=args.audio,
+        ref_text=args.ref_text,
+        gen_text=args.gen_text,
+        model=args.model,
+    )
+
+
+if __name__ == "__main__":
+    main()
